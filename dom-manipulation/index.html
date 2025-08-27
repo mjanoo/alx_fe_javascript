@@ -18,7 +18,8 @@
 
   <!-- Actions -->
   <button id="newQuote">Show New Quote</button>
-
+<button onclick="exportToJsonFile()">Export Quotes</button>
+<input type="file" id="importFile" accept=".json" onchange="importFromJsonFile(event)" />
   <h2>Add New Quote</h2>
   <form id="quoteForm" autocomplete="off">
     <input id="newQuoteText" type="text" placeholder="Enter new quote" required>
