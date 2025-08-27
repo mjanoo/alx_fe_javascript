@@ -5,7 +5,7 @@ let serverQuotes = [
 ];
 
 // Simulate fetching data from server
-function fetchServerQuotes() {
+function fetchQuotesFromServer() {   // renamed
   return new Promise((resolve) => {
     setTimeout(() => resolve(serverQuotes), 500); // simulate network delay
   });
@@ -210,7 +210,7 @@ function importFromJsonFile(event) {
 
 // Sync with server periodically
 async function syncWithServer() {
-  const serverData = await fetchServerQuotes();
+  const serverData = await fetchQuotesFromServer(); // updated
 
   // Conflict resolution: server wins
   serverData.forEach(serverQuote => {
