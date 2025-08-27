@@ -1,3 +1,26 @@
+// Fetch quotes from mock server
+async function fetchQuotesFromServer() {
+  const response = await fetch("https://jsonplaceholder.typicode.com/posts");
+  const data = await response.json();
+  // Convert posts to quote format for your app
+  return data.map(post => ({
+    text: post.title,
+    category: "General" // API has no category, use default
+  }));
+}
+
+// Send quotes to mock server
+async function sendQuotesToServer(localQuotes) {
+  await Promise.all(localQuotes.map(async (quote) => {
+    await fetch("https://jsonplaceholder.typicode.com/posts", {
+      method: "POST",
+      body: JSON.stringify(quote),
+      headers: { "Content-type": "application/json; charset=UTF-8" }
+    });
+  }));
+  return true;
+}
+
 // Load quotes from localStorage or use defaults
 let quotes = JSON.parse(localStorage.getItem("quotes")) || [
   { text: "The best way to get started is to quit talking and begin doing.", category: "Motivation" },
@@ -10,7 +33,6 @@ function saveQuotes() {
   localStorage.setItem("quotes", JSON.stringify(quotes));
 }
 
-// ------------------------
 // Notification system
 function notifyUser(message) {
   let feedback = document.getElementById("feedback");
@@ -20,11 +42,10 @@ function notifyUser(message) {
     document.body.appendChild(feedback);
   }
   feedback.textContent = message;
-
   setTimeout(() => { feedback.textContent = ""; }, 5000);
 }
 
-// Displays a random quote in #quoteDisplay
+// Display a random quote
 function showRandomQuote(filteredQuotes = quotes) {
   if (filteredQuotes.length === 0) {
     document.getElementById("quoteDisplay").innerHTML = "<p>No quotes in this category.</p>";
@@ -47,11 +68,10 @@ function showRandomQuote(filteredQuotes = quotes) {
   quoteDisplay.appendChild(quoteText);
   quoteDisplay.appendChild(quoteCategory);
 
-  // Save last viewed quote to sessionStorage
   sessionStorage.setItem("lastQuote", JSON.stringify(randomQuote));
 }
 
-// Show the last viewed quote (from sessionStorage)
+// Display last viewed quote
 function displayLastQuote() {
   const lastQuote = JSON.parse(sessionStorage.getItem("lastQuote"));
   const quoteDisplay = document.getElementById("quoteDisplay");
@@ -63,7 +83,7 @@ function displayLastQuote() {
   }
 }
 
-// Build dropdowns dynamically
+// Populate category filter dropdown
 function populateCategories() {
   const categoryFilter = document.getElementById("categoryFilter");
   if (!categoryFilter) return;
@@ -78,7 +98,6 @@ function populateCategories() {
     categoryFilter.appendChild(option);
   });
 
-  // Restore last selected filter
   const savedFilter = localStorage.getItem("selectedCategory");
   if (savedFilter) {
     categoryFilter.value = savedFilter;
@@ -99,9 +118,9 @@ function filterQuotes() {
   }
 }
 
-// Builds the “add quote” form dynamically and wires submit -> addQuote
+// Create add-quote form
 function createAddQuoteForm() {
-  if (document.getElementById("quoteForm")) return; // avoid duplicates
+  if (document.getElementById("quoteForm")) return;
 
   const form = document.createElement("form");
   form.id = "quoteForm";
@@ -126,7 +145,7 @@ function createAddQuoteForm() {
   form.addEventListener("submit", addQuote);
 }
 
-// Adds a new quote
+// Add new quote
 async function addQuote(e) {
   e.preventDefault();
 
@@ -139,7 +158,7 @@ async function addQuote(e) {
   }
 
   quotes.push({ text, category });
-  saveQuotes(); // persist to localStorage
+  saveQuotes();
 
   document.getElementById("newQuoteText").value = "";
   document.getElementById("newQuoteCategory").value = "";
@@ -147,26 +166,11 @@ async function addQuote(e) {
   populateCategories();
   filterQuotes();
 
-  await sendQuotesToServer(quotes); // sync to server
+  await sendQuotesToServer(quotes);
+  notifyUser("New quote synced to server!");
 }
 
-// Send quotes to a mock server using fetch
-async function sendQuotesToServer(localQuotes) {
-  try {
-    const response = await fetch("https://jsonplaceholder.typicode.com/posts", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(localQuotes)
-    });
-    if (!response.ok) throw new Error("Failed to sync with server");
-    notifyUser("✅ Quotes synced to server!");
-  } catch (error) {
-    notifyUser("❌ Error syncing with server");
-    console.error(error);
-  }
-}
-
-// Export quotes to JSON file
+// Export quotes to JSON
 function exportToJsonFile() {
   const dataStr = JSON.stringify(quotes, null, 2);
   const blob = new Blob([dataStr], { type: "application/json" });
@@ -179,7 +183,7 @@ function exportToJsonFile() {
   URL.revokeObjectURL(url);
 }
 
-// Import quotes from JSON file
+// Import quotes from JSON
 function importFromJsonFile(event) {
   const fileReader = new FileReader();
   fileReader.onload = function(event) {
@@ -202,33 +206,23 @@ function importFromJsonFile(event) {
 
 // Sync with server periodically
 async function syncWithServer() {
-  try {
-    // Fetch current quotes from server (mock GET)
-    const response = await fetch("https://jsonplaceholder.typicode.com/posts");
-    const serverData = await response.json();
+  const serverData = await fetchQuotesFromServer();
 
-    // Conflict resolution: server wins
-    serverData.forEach(serverQuote => {
-      const exists = quotes.find(q => q.text === serverQuote.title && q.category === serverQuote.body);
-      if (!exists) {
-        quotes.push({ text: serverQuote.title, category: serverQuote.body });
-      }
-    });
+  serverData.forEach(serverQuote => {
+    const exists = quotes.find(q => q.text === serverQuote.text && q.category === serverQuote.category);
+    if (!exists) quotes.push(serverQuote);
+  });
 
-    saveQuotes();
-    populateCategories();
-    filterQuotes();
-    notifyUser("✅ Quotes synced with server!");
-  } catch (error) {
-    notifyUser("❌ Error fetching data from server");
-    console.error(error);
-  }
+  saveQuotes();
+  populateCategories();
+  filterQuotes();
+  notifyUser("Quotes synced with server!");
 }
 
-// Run sync every 30 seconds
+// Sync every 30 seconds
 setInterval(syncWithServer, 30000);
 
-// Hook up events after DOM is ready
+// DOMContentLoaded
 document.addEventListener("DOMContentLoaded", () => {
   createAddQuoteForm();
   populateCategories();
@@ -239,7 +233,6 @@ document.addEventListener("DOMContentLoaded", () => {
   const filter = document.getElementById("categoryFilter");
   if (filter) filter.addEventListener("change", filterQuotes);
 
-  // Show last viewed quote if exists, else random
   const lastQuote = sessionStorage.getItem("lastQuote");
   if (lastQuote) {
     displayLastQuote();
@@ -247,5 +240,6 @@ document.addEventListener("DOMContentLoaded", () => {
     filterQuotes();
   }
 });
+
 
 
