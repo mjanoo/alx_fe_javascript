@@ -18,6 +18,7 @@ async function sendQuotesToServer(localQuotes) {
       headers: { "Content-type": "application/json; charset=UTF-8" }
     });
   }));
+}
   return true;
 }
 
