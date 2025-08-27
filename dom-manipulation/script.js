@@ -1,3 +1,26 @@
+// Simulated server storage
+let serverQuotes = [
+  { text: "Server quote 1", category: "Motivation" },
+  { text: "Server quote 2", category: "Inspiration" }
+];
+
+// Simulate fetching data from server
+function fetchServerQuotes() {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve(serverQuotes), 500); // simulate network delay
+  });
+}
+
+// Simulate sending data to server
+function sendQuotesToServer(localQuotes) {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      serverQuotes = [...localQuotes]; // server accepts local quotes
+      resolve(true);
+    }, 500);
+  });
+}
+
 // Load quotes from localStorage or use defaults
 let quotes = JSON.parse(localStorage.getItem("quotes")) || [
   { text: "The best way to get started is to quit talking and begin doing.", category: "Motivation" },
@@ -8,6 +31,20 @@ let quotes = JSON.parse(localStorage.getItem("quotes")) || [
 // Save quotes to localStorage
 function saveQuotes() {
   localStorage.setItem("quotes", JSON.stringify(quotes));
+}
+
+// ------------------------
+// Notification system
+function notifyUser(message) {
+  let feedback = document.getElementById("feedback");
+  if (!feedback) {
+    feedback = document.createElement("p");
+    feedback.id = "feedback";
+    document.body.appendChild(feedback);
+  }
+  feedback.textContent = message;
+
+  setTimeout(() => { feedback.textContent = ""; }, 5000);
 }
 
 // Displays a random quote in #quoteDisplay
@@ -113,7 +150,7 @@ function createAddQuoteForm() {
 }
 
 // Adds a new quote
-function addQuote(e) {
+async function addQuote(e) {
   e.preventDefault();
 
   const text = document.getElementById("newQuoteText").value.trim();
@@ -132,6 +169,9 @@ function addQuote(e) {
 
   populateCategories();
   filterQuotes();
+
+  await sendQuotesToServer(quotes); // sync to server
+  notifyUser("New quote synced to server!");
 }
 
 // Export quotes to JSON file
@@ -157,7 +197,7 @@ function importFromJsonFile(event) {
         quotes.push(...importedQuotes);
         saveQuotes();
         populateCategories();
-        alert("✅ Quotes imported successfully!");
+        notifyUser("✅ Quotes imported successfully!");
       } else {
         alert("❌ Invalid JSON format. Expected an array of quotes.");
       }
@@ -167,6 +207,27 @@ function importFromJsonFile(event) {
   };
   fileReader.readAsText(event.target.files[0]);
 }
+
+// Sync with server periodically
+async function syncWithServer() {
+  const serverData = await fetchServerQuotes();
+
+  // Conflict resolution: server wins
+  serverData.forEach(serverQuote => {
+    const exists = quotes.find(q => q.text === serverQuote.text && q.category === serverQuote.category);
+    if (!exists) {
+      quotes.push(serverQuote);
+    }
+  });
+
+  saveQuotes();
+  populateCategories();
+  filterQuotes();
+  notifyUser("Quotes synced with server!");
+}
+
+// Run sync every 30 seconds
+setInterval(syncWithServer, 30000);
 
 // Hook up events after DOM is ready
 document.addEventListener("DOMContentLoaded", () => {
