@@ -11,15 +11,19 @@
 
   <!-- Category filter -->
   <label for="categoryFilter">Filter by Category:</label>
-  <select id="categoryFilter" onchange="filterQuotes()">
+  <select id="categoryFilter">
     <option value="all">All Categories</option>
   </select>
+
   <!-- Quote display area -->
   <div id="quoteDisplay" aria-live="polite"></div>
+
   <!-- Actions -->
   <button id="newQuote">Show New Quote</button>
-<button onclick="exportToJsonFile()">Export Quotes</button>
-<input type="file" id="importFile" accept=".json" onchange="importFromJsonFile(event)" />
+  <button onclick="exportToJsonFile()">Export Quotes</button>
+  <input type="file" id="importFile" accept=".json" onchange="importFromJsonFile(event)" />
+  <button id="syncNow">Sync Now</button> <!-- NEW: Manual sync -->
+
   <h2>Add New Quote</h2>
   <form id="quoteForm" autocomplete="off">
     <input id="newQuoteText" type="text" placeholder="Enter new quote" required>
@@ -30,5 +34,14 @@
   <p id="feedback" role="status"></p>
 
   <script src="script.js"></script>
+  <script>
+    // Hook up manual sync button
+    const syncBtn = document.getElementById("syncNow");
+    if (syncBtn) {
+      syncBtn.addEventListener("click", async () => {
+        await syncWithServer();
+      });
+    }
+  </script>
 </body>
 </html>
