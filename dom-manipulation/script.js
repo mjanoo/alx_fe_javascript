@@ -10,7 +10,7 @@ async function fetchQuotesFromServer() {
 }
 
 // Send quotes to mock server
-async function sendQuotesToServer(localQuotes) {
+ 
   await Promise.all(localQuotes.map(async (quote) => {
     await fetch("https://jsonplaceholder.typicode.com/posts", {
       method: "POST",
@@ -206,9 +206,9 @@ function importFromJsonFile(event) {
 }
 
 // Sync with server periodically
-async function syncWithServer() {
+// New
+async function syncQuotes() { ... } {
   const serverData = await fetchQuotesFromServer();
-
   serverData.forEach(serverQuote => {
     const exists = quotes.find(q => q.text === serverQuote.text && q.category === serverQuote.category);
     if (!exists) quotes.push(serverQuote);
@@ -221,8 +221,8 @@ async function syncWithServer() {
 }
 
 // Sync every 30 seconds
-setInterval(syncWithServer, 30000);
-
+// New
+setInterval(syncQuotes, 30000);
 // DOMContentLoaded
 document.addEventListener("DOMContentLoaded", () => {
   createAddQuoteForm();
