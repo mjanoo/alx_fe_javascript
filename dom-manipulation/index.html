@@ -9,13 +9,13 @@
 <body>
   <h1>Dynamic Quote Generator</h1>
 
-  <!-- Category selector -->
-  <label for="categorySelect">Choose Category:</label>
-  <select id="categorySelect"></select>
-
+  <!-- Category filter -->
+  <label for="categoryFilter">Filter by Category:</label>
+  <select id="categoryFilter" onchange="filterQuotes()">
+    <option value="all">All Categories</option>
+  </select>
   <!-- Quote display area -->
   <div id="quoteDisplay" aria-live="polite"></div>
-
   <!-- Actions -->
   <button id="newQuote">Show New Quote</button>
 <button onclick="exportToJsonFile()">Export Quotes</button>
